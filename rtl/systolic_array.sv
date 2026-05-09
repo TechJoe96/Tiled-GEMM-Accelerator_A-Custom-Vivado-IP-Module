@@ -23,6 +23,8 @@ module systolic_array #(
     logic signed [31:0] c_wires [N][N];
 
 
+    genvar i, j;
+
      // Input skew: row k gets k cycles of delay
     generate
         for (i = 0; i < N; i = i + 1) begin: askew_row
@@ -36,8 +38,7 @@ module systolic_array #(
         end
     endgenerate
 
-
-    genvar i, j;
+    
     generate
         for (i = 0; i < N; i = i + 1) begin: row
             for (j = 0; j < N; j = j + 1) begin: col
