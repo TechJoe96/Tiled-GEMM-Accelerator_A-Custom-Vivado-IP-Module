@@ -95,6 +95,14 @@ module systolic_array_tb;
         for (int k = 0; k < N; k++) a_in[k] = 0;
         $display("--- A stream done, watching c_out for 30 cycles ---");
 
+        // Snapshot PE(7,*).c_out *immediately* after the last streaming edge (r=7),
+        // before any further @(posedge clk) overwrites it. PE(7,0).c_out at this
+        // instant should equal C[0][0]; the other PE(7,j) cells are still ramping.
+        #1;
+        $write("after r=7  PE(7,*):");
+        for (int j = 0; j < N; j++) $write(" %7d", probe_pe_bot_cout[j]);
+        $display("");
+
         // *** NEW *** print PE(7,*) alongside c_out in the trace
         for (int cy = 0; cy < 30; cy++) begin
             @(posedge clk); #1;
