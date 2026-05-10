@@ -25,13 +25,29 @@ module systolic_array_tb;
     // 100 MHz clock
     always #5 clk = ~clk;
 
-    // Test data: flat 1D arrays, loaded from hex files
+    // Test data
     logic signed [15:0] a_tile      [N*N];
     logic signed [15:0] b_tile      [N*N];
     logic signed [31:0] c_expected  [N*N];
 
+    // PROBE arrays — populated by generate-time assigns so we can index at runtime
+    logic signed [15:0] probe_weights     [N][N];
+    logic signed [31:0] probe_pe_bot_cout [N];
+
+    genvar gi, gj;
+    generate
+        for (gi = 0; gi < N; gi = gi + 1) begin: probe_w_row
+            for (gj = 0; gj < N; gj = gj + 1) begin: probe_w_col
+                assign probe_weights[gi][gj] = dut.row[gi].col[gj].pe_inst.weight;
+            end
+        end
+        for (gj = 0; gj < N; gj = gj + 1) begin: probe_botcout
+            assign probe_pe_bot_cout[gj] = dut.row[N-1].col[gj].pe_inst.c_out;
+        end
+    endgenerate
+
     initial begin
-        // Initialize driven signals
+        // Initialize
         clk         = 0;
         rst         = 1;
         load_weight = 0;
@@ -40,13 +56,12 @@ module systolic_array_tb;
             for (int j = 0; j < N; j++)
                 b_in[i][j] = 0;
 
-        // Read test vectors from hex files
+        // Read test vectors
         $readmemh("../tb/data/a_tile.hex",     a_tile);
         $readmemh("../tb/data/b_tile.hex",     b_tile);
         $readmemh("../tb/data/c_expected.hex", c_expected);
         $display("Test vectors loaded.");
 
-        // Sanity-check the loaded values: print row 0 of each tile
         $display("a_tile row 0: %0d %0d %0d %0d %0d %0d %0d %0d",
             a_tile[0], a_tile[1], a_tile[2], a_tile[3],
             a_tile[4], a_tile[5], a_tile[6], a_tile[7]);
@@ -56,16 +71,13 @@ module systolic_array_tb;
         $display("c_expected row 0: %0d %0d %0d %0d %0d %0d %0d %0d",
             c_expected[0], c_expected[1], c_expected[2], c_expected[3],
             c_expected[4], c_expected[5], c_expected[6], c_expected[7]);
-        $display("c_expected row 1: %0d %0d %0d %0d %0d %0d %0d %0d",
-            c_expected[8],  c_expected[9],  c_expected[10], c_expected[11],
-            c_expected[12], c_expected[13], c_expected[14], c_expected[15]);
 
         // Hold reset
         repeat (3) @(posedge clk);
         rst = 0;
         @(posedge clk);
 
-        // Weight load: all 64 B values latched in one cycle
+        // Weight load
         for (int i = 0; i < N; i++)
             for (int j = 0; j < N; j++)
                 b_in[i][j] = b_tile[i*N + j];
@@ -73,17 +85,17 @@ module systolic_array_tb;
         @(posedge clk);
         load_weight = 0;
         $display("--- weights loaded, starting A stream ---");
-        // Verify weights got loaded correctly
+
+        // Print all loaded weights via the probe
         $display("Loaded weights (B values inside PEs):");
         for (int i = 0; i < N; i++) begin
             $write("  Row %0d:", i);
             for (int j = 0; j < N; j++)
-                $write(" %5d", dut.row[i].col[j].pe_inst.weight);
+                $write(" %5d", probe_weights[i][j]);
             $display("");
         end
 
-
-        // Stream A row by row for N cycles
+        // Stream A
         for (int r = 0; r < N; r++) begin
             for (int k = 0; k < N; k++) a_in[k] = a_tile[r*N + k];
             @(posedge clk);
@@ -91,13 +103,13 @@ module systolic_array_tb;
         for (int k = 0; k < N; k++) a_in[k] = 0;
         $display("--- A stream done, watching c_out for 30 cycles ---");
 
-        // Wide trace: print c_out for many cycles after streaming ends
+        // Trace c_out (external, after drain) and PE(7,*).c_out (internal, before drain)
         for (int cy = 0; cy < 30; cy++) begin
             @(posedge clk); #1;
             $write("cy %2d  c_out:", cy);
             for (int j = 0; j < N; j++) $write(" %7d", c_out[j]);
             $write("    PE(7,*):");
-            for (int j = 0; j < N; j++) $write(" %7d", dut.row[7].col[j].pe_inst.c_out);
+            for (int j = 0; j < N; j++) $write(" %7d", probe_pe_bot_cout[j]);
             $display("");
         end
 
