@@ -28,7 +28,7 @@ module array_ctrl_tb;
     end
     tile_ctrl #(
         .N(N),
-        .DRAIN_CYCLES(7)
+        .DRAIN_CYCLES(6)
     ) ctrl (
         .clk           (clk),
         .rst           (rst),
