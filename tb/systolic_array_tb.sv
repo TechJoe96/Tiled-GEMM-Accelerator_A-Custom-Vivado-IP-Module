@@ -102,12 +102,16 @@ module systolic_array_tb;
             $display("");
         end
 
-        // Stream A row by row
+        // Stream A row by row.
+        // Use non-blocking (<=) so the new a_in value is committed in the NBA
+        // region of the CURRENT time slot, after every always_ff in S_t has
+        // already sampled the OLD a_in. This eliminates the TB-vs-RTL race in
+        // which shift_regs were latching the next iteration's a_in early.
         for (int r = 0; r < N; r++) begin
-            for (int k = 0; k < N; k++) a_in[k] = a_tile[r*N + k];
+            for (int k = 0; k < N; k++) a_in[k] <= a_tile[r*N + k];
             @(posedge clk);
         end
-        for (int k = 0; k < N; k++) a_in[k] = 0;
+        for (int k = 0; k < N; k++) a_in[k] <= 0;
         $display("--- A stream done, watching c_out for 30 cycles ---");
 
         // Trace: c_out (post-drain), PE(7,*) (pre-drain bottom row), and column-0 chain
