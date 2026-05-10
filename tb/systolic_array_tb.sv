@@ -4,7 +4,6 @@ module systolic_array_tb;
 
     parameter int N = 8;
 
-    // Signals connecting to the DUT
     logic clk;
     logic rst;
     logic load_weight;
@@ -12,7 +11,6 @@ module systolic_array_tb;
     logic signed [15:0] b_in  [N][N];
     logic signed [31:0] c_out [N];
 
-    // Instantiate the systolic array under test
     systolic_array #(.N(N)) dut (
         .clk         (clk),
         .rst         (rst),
@@ -22,18 +20,17 @@ module systolic_array_tb;
         .c_out       (c_out)
     );
 
-    // 100 MHz clock
     always #5 clk = ~clk;
 
-    // Test data
     logic signed [15:0] a_tile      [N*N];
     logic signed [15:0] b_tile      [N*N];
     logic signed [31:0] c_expected  [N*N];
 
-    // PROBE arrays — populated by generate-time assigns so we can index at runtime
+    // *** NEW *** probe arrays for internal signals
     logic signed [15:0] probe_weights     [N][N];
     logic signed [31:0] probe_pe_bot_cout [N];
 
+    // *** NEW *** generate block to wire probes from PE internals
     genvar gi, gj;
     generate
         for (gi = 0; gi < N; gi = gi + 1) begin: probe_w_row
@@ -47,7 +44,6 @@ module systolic_array_tb;
     endgenerate
 
     initial begin
-        // Initialize
         clk         = 0;
         rst         = 1;
         load_weight = 0;
@@ -56,7 +52,6 @@ module systolic_array_tb;
             for (int j = 0; j < N; j++)
                 b_in[i][j] = 0;
 
-        // Read test vectors
         $readmemh("../tb/data/a_tile.hex",     a_tile);
         $readmemh("../tb/data/b_tile.hex",     b_tile);
         $readmemh("../tb/data/c_expected.hex", c_expected);
@@ -72,12 +67,10 @@ module systolic_array_tb;
             c_expected[0], c_expected[1], c_expected[2], c_expected[3],
             c_expected[4], c_expected[5], c_expected[6], c_expected[7]);
 
-        // Hold reset
         repeat (3) @(posedge clk);
         rst = 0;
         @(posedge clk);
 
-        // Weight load
         for (int i = 0; i < N; i++)
             for (int j = 0; j < N; j++)
                 b_in[i][j] = b_tile[i*N + j];
@@ -86,7 +79,7 @@ module systolic_array_tb;
         load_weight = 0;
         $display("--- weights loaded, starting A stream ---");
 
-        // Print all loaded weights via the probe
+        // *** NEW *** print all loaded weights
         $display("Loaded weights (B values inside PEs):");
         for (int i = 0; i < N; i++) begin
             $write("  Row %0d:", i);
@@ -95,7 +88,6 @@ module systolic_array_tb;
             $display("");
         end
 
-        // Stream A
         for (int r = 0; r < N; r++) begin
             for (int k = 0; k < N; k++) a_in[k] = a_tile[r*N + k];
             @(posedge clk);
@@ -103,7 +95,7 @@ module systolic_array_tb;
         for (int k = 0; k < N; k++) a_in[k] = 0;
         $display("--- A stream done, watching c_out for 30 cycles ---");
 
-        // Trace c_out (external, after drain) and PE(7,*).c_out (internal, before drain)
+        // *** NEW *** print PE(7,*) alongside c_out in the trace
         for (int cy = 0; cy < 30; cy++) begin
             @(posedge clk); #1;
             $write("cy %2d  c_out:", cy);
