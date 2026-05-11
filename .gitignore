@@ -1,0 +1,79 @@
+# =============================================================================
+# .gitignore — Tiled GEMM Custom IP Project
+#
+# Keeps the repository clean by excluding generated build artifacts, Vivado
+# project working files, and editor noise. Source files (rtl/, tb/, software/,
+# scripts/, docs/) and the Makefile are all explicitly tracked.
+# =============================================================================
+
+# ----- Vivado / Vitis logs and journals (regenerated every run) -----
+*.jou
+*.log
+*.pb
+*.backup.*
+*.str
+hd_visual/
+.hbs/
+
+# ----- xsim (simulator) runtime files -----
+.Xil/
+xsim.dir/
+*.wdb
+*.vcd
+xvlog.log
+xvlog.pb
+xelab.log
+xelab.pb
+xsim.log
+xsim.jou
+xelab.jou
+xvlog.jou
+
+# ----- Webtalk files (Xilinx telemetry) -----
+webtalk*.log
+webtalk*.jou
+webtalk*.pb
+webtalk*.html
+webtalk*.xml
+usage_statistics_webtalk.*
+
+# ----- Vivado project working directories (regenerable from .xpr + RTL) -----
+*.runs/
+*.cache/
+*.gen/
+*.hw/
+*.sim/
+*.ip_user_files/
+*.srcs/sources_1/bd/*/ip/
+*.srcs/sources_1/bd/*/hdl/
+*.srcs/sources_1/bd/*/synth/
+*.srcs/sources_1/bd/*/ipshared/
+
+# ----- Makefile build artifacts -----
+build/
+
+# ----- Generated test vectors (regenerable from software/dump_test_vectors.py) -----
+# Keep them tracked since they're deterministic and let reviewers run sims
+# without rerunning Python first. Uncomment below to ignore instead:
+# tb/data/*.hex
+
+# ----- macOS / Linux / editor noise -----
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+\#*\#
+.\#*
+
+# ----- Python (golden model bytecode) -----
+__pycache__/
+*.pyc
+*.pyo
+
+# ----- Vivado intermediate from BD generation -----
+*.hbs
+*.local
+*.pb
+*.dcp

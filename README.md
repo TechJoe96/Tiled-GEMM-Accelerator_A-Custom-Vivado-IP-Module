@@ -1,5 +1,7 @@
 # Custom IP Module for Tiled GEMM — 8x8 Systolic Array
 
+A reusable Vivado IP module I developed from scratch for my graduate course at NYU (ECE: IP Design).
+
 The IP packages a complete 8x8 weight-stationary systolic array, written entirely in SystemVerilog at the register-transfer level, with an AXI-Lite control interface for host communication. The full design — RTL, verification suite, AXI wrapper, and the packaged IP archive — is in this repo and can be dropped into any Vivado block design like a standard Xilinx IP.
 
 **Target device:** Xilinx Zynq-7020 (PYNQ-Z2 board)
@@ -55,7 +57,7 @@ The host communicates with the IP through memory-mapped registers in a 4 KB AXI-
 4. Host polls `STATUS` (offset `0x004`) until bit 0 reads back as 1
 5. Host reads the 64 C-tile registers (`0x010` through `0x10C`) over AXI-Lite
 
-Total IP latency: **~16 cycles from start to done** at 100 MHz = **160 ns per tile**.
+Total IP latency: **15 cycles from start_pulse to done assertion** at 100 MHz = **150 ns per tile**. (Breakdown: 1 cycle LOAD_WEIGHTS + 8 cycles STREAM + 6 cycles DRAIN. The `done` flag asserts at the start of cycle 16 — the cycle immediately after DRAIN completes — and stays latched until the next `start_pulse`.)
 
 ---
 
@@ -125,13 +127,15 @@ The IP exploits several layers of parallelism. Each claim below points to the sp
 **Output drain chains:** Column `j` of C exits through a shift register of depth `N-1-j`. This depth-per-column scheme realigns the staggered output so all 8 columns of one row appear simultaneously on `c_out[N]`.
 → Implemented in `rtl/systolic_array.sv` via a per-column `generate` loop that instantiates `rtl/shift_reg.sv` with `DEPTH = N-1-j`.
 
-**Pipeline structure of one tile compute:**
+**Pipeline structure of one tile compute (15 cycles total):**
 
 ```
-   Cycle:     1     2-9        10-15    16
-   Phase:   load   stream     drain    done
-            weight (8 cycles) (6 cyc)  (1 cyc)
+   Cycle:     1     2-9        10-15    | 16
+   Phase:   load   stream     drain     | done asserted
+            (1)    (8 cycles) (6 cycles)| (latched flag)
 ```
+
+`done` asserts at the start of cycle 16 and remains latched until the next `start_pulse`. The 15-cycle compute window is the actual latency reported in Section 3's analysis.
 
 ### Resource budget (target xc7z020, 220 DSP slices available)
 
@@ -142,6 +146,41 @@ The IP exploits several layers of parallelism. Each claim below points to the sp
 | Flip-flops | PE weight/a_in_reg/c_reg, FSM state, AXI registers | <5000 |
 
 Resource utilization fits with ample headroom — under 30% DSP, well within LUT/BRAM budgets for the xc7z020.
+
+### Quantitative design tradeoffs
+
+The architectural choices above were not made by intuition alone. Each one was driven by concrete numerical tradeoffs against the target chip's resource budget and the project's latency goal.
+
+**Array size: why 8×8 specifically?**
+
+| Array size | DSPs needed | % of 220 budget | STREAM cycles | Per-tile latency | Verdict |
+|---|---|---|---|---|---|
+| 4×4 | 16 | 7.3% | 4 | ~8 cycles | Underutilizes chip; 4× more tiles to compute |
+| **8×8** | **64** | **29.1%** | **8** | **15 cycles** | **Chosen — best balance** |
+| 12×12 | 144 | 65.5% | 12 | 22 cycles | Heavy DSP use; less room for multi-IP |
+| 16×16 | 256 | 116% | 16 | 28 cycles | **Exceeds DSP budget — won't fit** |
+
+8×8 gives 4× the throughput of 4×4 (64 PEs vs 16) while leaving 156 DSP slices (71%) free for future expansion (a second IP instance, FIR filter, etc.). 16×16 is the obvious next jump but won't fit on the xc7z020 — that's a Zynq-Ultrascale class problem.
+
+**Dataflow: why weight-stationary?**
+
+| Dataflow | What's reused in PE | Buffer load cost | C readback cost | Picked? |
+|---|---|---|---|---|
+| **Weight-stationary** | B weight (held in PE) | 1 cycle (load all 64 weights) | Stream out via drain chain | **Yes** |
+| Output-stationary | C accumulator (held in PE) | Stream both A and B every cycle | Direct read from PE register | No |
+| Input-stationary | A input (held in PE) | Stream B and accumulate | Stream out via drain chain | No |
+
+For a single tile, all three need 8 cycles of compute. The differentiator is buffer complexity. Weight-stationary needs the B buffer presented combinationally for **1 cycle** (load_weight), then never accessed again — the simplest possible B-buffer interface. Output-stationary would need both A and B streamed every cycle for all 8 cycles, doubling the buffer read bandwidth requirement.
+
+**Buffer memory: why LUTRAM over BRAM?**
+
+The A-tile buffer stores 64 × 16-bit = 1,024 bits. A single BRAM18K block is 18,432 bits. Using one BRAM for the A-tile buffer would waste **94.4%** of the block. Vivado's automatic memory inference correctly picks LUTRAM (distributed memory) instead — the synthesis report shows 427 LUT-as-Memory entries and zero BRAM consumed. This frees all 140 BRAM tiles for future use.
+
+**Numerical format: int16 in / int32 out**
+
+The 32-bit accumulator has 16 bits of headroom over the input width. An 8-element dot-product of two int16 vectors has a worst-case magnitude of 8 × (2^15)² = 2³¹, which exactly fits in int32 without saturation. Going to int8 inputs would halve the DSP utilization (one DSP could hold two int8 multiplies) but the verification harness is simpler with int16 because NumPy's default integer type matches.
+
+These choices were not all reached on the first try — the 8×8 array size, in particular, was settled on after experimenting with the math of skew-chain depth and DRAIN_CYCLES for the 4×4 and 6×6 cases during Phase 4.
 
 ---
 
@@ -264,11 +303,11 @@ WNS (Worst Negative Slack) of +1.377 ns at a 10 ns (100 MHz) clock period means 
 
 | Goal | Target | Achieved | Status |
 |---|---|---|---|
-| Bit-exact correctness | 100% pass on randomized tests | 6400/6400 (100%) | pass |
-| Fit on xc7z020 | <50% LUT, <50% DSP | 3.3% LUT, 29% DSP | pass |
-| Operating frequency | 100 MHz minimum | 116 MHz (met at 100 MHz with +1.377 ns slack) | pass |
-| Tile latency | <30 cycles | 15 cycles | pass |
-| Packaged as reusable IP | Drop-in Vivado IP archive | Yes, via IP Packager | pass |
+| Bit-exact correctness | 100% pass on randomized tests | 6400/6400 (100%) | ✅ |
+| Fit on xc7z020 | <50% LUT, <50% DSP | 3.3% LUT, 29% DSP | ✅ |
+| Operating frequency | 100 MHz minimum | 116 MHz (met at 100 MHz with +1.377 ns slack) | ✅ |
+| Tile latency | <30 cycles | 15 cycles | ✅ |
+| Packaged as reusable IP | Drop-in Vivado IP archive | Yes, via IP Packager | ✅ |
 
 ---
 
