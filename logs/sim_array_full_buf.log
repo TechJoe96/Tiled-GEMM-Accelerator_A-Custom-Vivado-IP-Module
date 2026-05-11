@@ -1,0 +1,82 @@
+==> [2/4] Running simulation: array_full_buf_tb
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "/home/yc7330/Custom-Vitis-IP-for-Tiled-GEMM/rtl/tile_buffer.sv" into library work
+INFO: [VRFC 10-311] analyzing module tile_buffer
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "/home/yc7330/Custom-Vitis-IP-for-Tiled-GEMM/rtl/b_tile_buffer.sv" into library work
+INFO: [VRFC 10-311] analyzing module b_tile_buffer
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "/home/yc7330/Custom-Vitis-IP-for-Tiled-GEMM/rtl/gemm_top.sv" into library work
+INFO: [VRFC 10-311] analyzing module gemm_top
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "/home/yc7330/Custom-Vitis-IP-for-Tiled-GEMM/rtl/systolic_array.sv" into library work
+INFO: [VRFC 10-311] analyzing module systolic_array
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "/home/yc7330/Custom-Vitis-IP-for-Tiled-GEMM/rtl/a_tile_buffer.sv" into library work
+INFO: [VRFC 10-311] analyzing module a_tile_buffer
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "/home/yc7330/Custom-Vitis-IP-for-Tiled-GEMM/rtl/pe.sv" into library work
+INFO: [VRFC 10-311] analyzing module pe
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "/home/yc7330/Custom-Vitis-IP-for-Tiled-GEMM/rtl/tile_ctrl.sv" into library work
+INFO: [VRFC 10-311] analyzing module tile_ctrl
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "/home/yc7330/Custom-Vitis-IP-for-Tiled-GEMM/rtl/axi_lite_ctrl.sv" into library work
+INFO: [VRFC 10-311] analyzing module axi_lite_ctrl
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "/home/yc7330/Custom-Vitis-IP-for-Tiled-GEMM/rtl/shift_reg.sv" into library work
+INFO: [VRFC 10-311] analyzing module shift_reg
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "/home/yc7330/Custom-Vitis-IP-for-Tiled-GEMM/tb/array_full_buf_tb.sv" into library work
+INFO: [VRFC 10-311] analyzing module array_full_buf_tb
+Vivado Simulator v2023.2
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
+Copyright 2022-2023 Advanced Micro Devices, Inc. All Rights Reserved.
+Running: /eda/xilinx/Vivado/2023.2/bin/unwrapped/lnx64.o/xelab -debug typical array_full_buf_tb -snapshot array_full_buf_tb_sim 
+Multi-threading is on. Using 126 slave threads.
+Starting static elaboration
+Pass Through NonSizing Optimizer
+Completed static elaboration
+Starting simulation data flow analysis
+Completed simulation data flow analysis
+Time Resolution for simulation is 1ps
+Compiling module work.tile_buffer(DEPTH=8)
+Compiling module work.a_tile_buffer_default
+Compiling module work.b_tile_buffer_default
+Compiling module work.shift_reg(DEPTH=0)
+Compiling module work.shift_reg_default
+Compiling module work.shift_reg(DEPTH=2)
+Compiling module work.shift_reg(DEPTH=3)
+Compiling module work.shift_reg(DEPTH=4)
+Compiling module work.shift_reg(DEPTH=5)
+Compiling module work.shift_reg(DEPTH=6)
+Compiling module work.shift_reg(DEPTH=7)
+Compiling module work.pe
+Compiling module work.shift_reg(WIDTH=32,DEPTH=7)
+Compiling module work.shift_reg(WIDTH=32,DEPTH=6)
+Compiling module work.shift_reg(WIDTH=32,DEPTH=5)
+Compiling module work.shift_reg(WIDTH=32,DEPTH=4)
+Compiling module work.shift_reg(WIDTH=32,DEPTH=3)
+Compiling module work.shift_reg(WIDTH=32,DEPTH=2)
+Compiling module work.shift_reg(WIDTH=32)
+Compiling module work.shift_reg(WIDTH=32,DEPTH=0)
+Compiling module work.systolic_array_default
+Compiling module work.array_full_buf_tb
+Built simulation snapshot array_full_buf_tb_sim
+
+****** xsim v2023.2 (64-bit)
+  **** SW Build 4029153 on Fri Oct 13 20:13:54 MDT 2023
+  **** IP Build 4028589 on Sat Oct 14 00:45:43 MDT 2023
+  **** SharedData Build 4025554 on Tue Oct 10 17:18:54 MDT 2023
+    ** Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
+    ** Copyright 2022-2023 Advanced Micro Devices, Inc. All Rights Reserved.
+
+source xsim.dir/array_full_buf_tb_sim/xsim_script.tcl
+# xsim {array_full_buf_tb_sim} -autoloadwcfg -runall
+Time resolution is 1 ps
+run -all
+WARNING: File ../tb/data/a_tile.hex referenced on /home/yc7330/Custom-Vitis-IP-for-Tiled-GEMM/rtl/shift_reg.sv at line 15 cannot be opened for reading. Please ensure that this file is available in the current working directory or parent directory of xsim.dir location specified via -xsimdir switch.
+WARNING: File ../tb/data/b_tile.hex referenced on /home/yc7330/Custom-Vitis-IP-for-Tiled-GEMM/rtl/shift_reg.sv at line 15 cannot be opened for reading. Please ensure that this file is available in the current working directory or parent directory of xsim.dir location specified via -xsimdir switch.
+WARNING: File ../tb/data/c_expected.hex referenced on /home/yc7330/Custom-Vitis-IP-for-Tiled-GEMM/rtl/shift_reg.sv at line 15 cannot be opened for reading. Please ensure that this file is available in the current working directory or parent directory of xsim.dir location specified via -xsimdir switch.
+Loaded 100 test cases.
+==================== SUMMARY ====================
+Total checks: 6400  (100 tests x 64 values each)
+Pass:         6400
+Fail:         0
+RESULT:       ALL TESTS PASSED
+=================================================
+$finish called at time : 33026 ns : File "/home/yc7330/Custom-Vitis-IP-for-Tiled-GEMM/tb/array_full_buf_tb.sv" Line 151
+exit
+INFO: [Common 17-206] Exiting xsim at Mon May 11 18:26:35 2026...
+==> SIMULATION FAILED — check /home/yc7330/Custom-Vitis-IP-for-Tiled-GEMM/build/sim/sim.log
+make: *** [Makefile:87: sim] Error 1

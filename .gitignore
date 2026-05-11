@@ -77,3 +77,7 @@ __pycache__/
 *.local
 *.pb
 *.dcp
+
+# Exception: keep committed sim logs as inspectable evidence
+!logs/
+!logs/*.log
