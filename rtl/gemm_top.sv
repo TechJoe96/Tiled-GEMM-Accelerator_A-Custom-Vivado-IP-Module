@@ -65,8 +65,9 @@ module gemm_top #(
     end
 
     // -------- C tile capture: time-based from start --------
-    // Cycle counter that starts at 1 when start_pulse fires, increments each cycle.
-    // Row K of C appears on c_out at counter == 16 + K (K in 0..7).
+    // Counter starts at 1 when start_pulse fires, increments each cycle.
+    // Row K of C is on c_out going INTO edge Sp+(16+K), which corresponds
+    // to counter going-in value 15+K. So capture window is counter == 15..22.
     logic [4:0] cycle_after_start;
     logic signed [31:0] c_latched [N][N];
 
@@ -79,9 +80,9 @@ module gemm_top #(
     end
 
     always_ff @(posedge clk) begin
-        if (cycle_after_start >= 16 && cycle_after_start <= 23) begin
+        if (cycle_after_start >= 15 && cycle_after_start <= 22) begin
             for (int j = 0; j < N; j++)
-                c_latched[cycle_after_start - 16][j] <= c_out[j];
+                c_latched[cycle_after_start - 15][j] <= c_out[j];
         end
     end
     // -------- end C capture --------
