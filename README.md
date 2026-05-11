@@ -1,7 +1,5 @@
 # Custom IP Module for Tiled GEMM — 8x8 Systolic Array
 
-A reusable Vivado IP module I developed from scratch for my graduate course at NYU (ECE: IP Design).
-
 The IP packages a complete 8x8 weight-stationary systolic array, written entirely in SystemVerilog at the register-transfer level, with an AXI-Lite control interface for host communication. The full design — RTL, verification suite, AXI wrapper, and the packaged IP archive — is in this repo and can be dropped into any Vivado block design like a standard Xilinx IP.
 
 **Target device:** Xilinx Zynq-7020 (PYNQ-Z2 board)
@@ -353,16 +351,16 @@ WNS (Worst Negative Slack) of +1.377 ns at a 10 ns (100 MHz) clock period means 
     └── gemm_bd/                 ← Output of `make bitstream` (.bit + .xsa)
 ```
 
-### Automated verification flow
+### Automated verification flow (zero GUI)
 
-The full pipeline runs from a clean clone with a single command:
+The full pipeline runs from a clean clone with a single command. Every stage is fully headless — `xsim` for simulation and `vivado -mode batch` for synthesis, IP packaging, and bitstream generation. **There are no manual Vivado GUI steps in the verification or build flow.**
 
 ```bash
 source /opt/Xilinx/Vivado/2023.2/settings64.sh   # or wherever Vivado lives
 make all
 ```
 
-`make all` runs the four-stage pipeline sequentially:
+`make all` runs the four-stage pipeline sequentially in headless batch mode:
 
 ```
 1. make vectors    →  python3 software/dump_test_vectors.py
@@ -459,13 +457,15 @@ A next-iteration refinement of the AXI write FSM (handling AW and W channels ind
 
 ## Quick reproduction guide
 
-The entire flow — from clean clone to a working bitstream — is one command:
+**Fully automated. No Vivado GUI required at any step.**
+
+The entire flow — from a clean clone to a working bitstream — is one command. There are **no manual Vivado GUI clicks** in the rebuild path: every stage (test vector generation, RTL simulation, IP packaging, and bitstream generation) runs through `make` and the Tcl scripts in `scripts/`, which invoke Vivado in headless batch mode (`vivado -mode batch`).
 
 ```bash
 git clone https://github.com/TechJoe96/Custom-Vitis-IP-for-Tiled-GEMM.git
 cd Custom-Vitis-IP-for-Tiled-GEMM
 source /opt/Xilinx/Vivado/2023.2/settings64.sh   # adjust to your Vivado path
-make all
+make all                                          # zero GUI interaction from here
 ```
 
 This runs vectors → simulation → IP packaging → bitstream end-to-end and produces:
