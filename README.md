@@ -102,10 +102,12 @@ The 100 random test cases × 64 cells each = 6400 individual value comparisons. 
 
 Synthesis results on xc7z020 (from Phase 8):
 
-- LUTs: [fill in from your synth report]
-- BRAM: [fill in]
-- DSP slices: [fill in]
-- Max frequency: [fill in] MHz
+- LUTs: 1,734 / 53,200 (3.3%)
+- BRAM: 0 / 140 (0% — buffers map to LUTRAM instead, which is fine for this size)
+- LUT-as-Memory (LUTRAM): 427 / 17,400 (2.5% — this is your A-tile buffer)
+- DSP slices: 64 / 220 (29% — one DSP per Processing Element)
+- Max frequency: 116 MHz (timing met at 100 MHz target with +1.377 ns of positive slack)
+- Flip-Flops (FF): 4,968 / 106,400 (4.7%)
 
 ## Taking it further: Phase 9 and on-board execution
 
