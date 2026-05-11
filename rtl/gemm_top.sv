@@ -63,30 +63,29 @@ module gemm_top #(
         else if (fsm_done_pulse)  done_latched <= 1'b1;
     end
 
-    // -------- C tile capture: explicit unroll to avoid Vivado for-loop bug --------
-    logic [4:0] cycle_after_start;
+    // -------- C tile capture: triggered by fsm_done_pulse --------
+    // At the edge where fsm_done_pulse fires, c_out has NOT yet advanced to
+    // row 0 (it appears on the NEXT edge). So we start capturing one cycle
+    // after the pulse, indexed by cap_idx = 0..N-1.
+    logic [3:0] cap_idx;
     logic signed [31:0] c_latched [N][N];
-    logic [3:0] cap_row;
-    assign cap_row = cycle_after_start - 5'd15;
 
     always_ff @(posedge clk) begin
-        if (rst)                                              cycle_after_start <= 0;
-        else if (start_pulse)                                 cycle_after_start <= 1;
-        else if (cycle_after_start > 0 && cycle_after_start < 25)
-                                                              cycle_after_start <= cycle_after_start + 1;
-        else                                                  cycle_after_start <= 0;
+        if (rst)                  cap_idx <= 4'hF;     // idle sentinel
+        else if (fsm_done_pulse)  cap_idx <= 4'd0;
+        else if (cap_idx < N)     cap_idx <= cap_idx + 4'd1;
     end
 
     always_ff @(posedge clk) begin
-        if (cycle_after_start >= 15 && cycle_after_start <= 22) begin
-            c_latched[cap_row][0] <= c_out[0];
-            c_latched[cap_row][1] <= c_out[1];
-            c_latched[cap_row][2] <= c_out[2];
-            c_latched[cap_row][3] <= c_out[3];
-            c_latched[cap_row][4] <= c_out[4];
-            c_latched[cap_row][5] <= c_out[5];
-            c_latched[cap_row][6] <= c_out[6];
-            c_latched[cap_row][7] <= c_out[7];
+        if (cap_idx < N) begin
+            c_latched[cap_idx][0] <= c_out[0];
+            c_latched[cap_idx][1] <= c_out[1];
+            c_latched[cap_idx][2] <= c_out[2];
+            c_latched[cap_idx][3] <= c_out[3];
+            c_latched[cap_idx][4] <= c_out[4];
+            c_latched[cap_idx][5] <= c_out[5];
+            c_latched[cap_idx][6] <= c_out[6];
+            c_latched[cap_idx][7] <= c_out[7];
         end
     end
     // -------- end C capture --------
