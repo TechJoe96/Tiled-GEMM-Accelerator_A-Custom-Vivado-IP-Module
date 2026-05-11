@@ -1,4 +1,4 @@
-# 8x8 Systolic Array Accelerator for Tiled GEMM
+# Tiled GEMM Accelerator: A Custom Vivado IP Module
 
 The core is an 8x8 weight-stationary systolic array, written entirely in SystemVerilog at the register-transfer level. It computes one tile of a matrix multiplication (C = A × B) per invocation, controlled over AXI-Lite. The full design — RTL, verification, AXI wrapper, packaged Vivado IP — is in this repo.
 
