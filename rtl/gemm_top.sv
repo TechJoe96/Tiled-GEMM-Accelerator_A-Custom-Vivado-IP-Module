@@ -56,7 +56,7 @@ module gemm_top #(
             a_in_to_array[k] = stream_active ? a_rd_data[k] : '0;
     end
 
-    // Done latch — host polls this through STATUS register
+    // Done latch
     logic done_latched;
     always_ff @(posedge clk) begin
         if (rst)                  done_latched <= 1'b0;
@@ -65,9 +65,10 @@ module gemm_top #(
     end
 
     // -------- C tile capture: time-based from start --------
-    // Counter starts at 1 when start_pulse fires, increments each cycle.
-    // Row K of C is on c_out going INTO edge Sp+(16+K), which corresponds
-    // to counter going-in value 15+K. So capture window is counter == 15..22.
+    // Counter starts at 1 at the edge after start_pulse, increments each cycle.
+    // Per Step 6.2 timing: row K of C is fully aligned on c_out going INTO
+    // edge W+(18+K), which means counter == 17+K going in.
+    // So capture window: counter == 17..24, with index (counter - 17).
     logic [4:0] cycle_after_start;
     logic signed [31:0] c_latched [N][N];
 
@@ -80,9 +81,9 @@ module gemm_top #(
     end
 
     always_ff @(posedge clk) begin
-        if (cycle_after_start >= 15 && cycle_after_start <= 22) begin
+        if (cycle_after_start >= 17 && cycle_after_start <= 24) begin
             for (int j = 0; j < N; j++)
-                c_latched[cycle_after_start - 15][j] <= c_out[j];
+                c_latched[cycle_after_start - 17][j] <= c_out[j];
         end
     end
     // -------- end C capture --------
